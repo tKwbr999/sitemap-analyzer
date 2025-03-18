@@ -2,16 +2,16 @@
 export class CrawlStatistics {
   // 総処理URL数
   private static totalUrlsProcessed = 0;
-  
+
   // スキップされたURL数
   private static skippedDuplicateUrls = 0;
-  
+
   // アンカー部分のみ違うURLのスキップ数
   private static skippedAnchorUrls = 0;
-  
+
   // スキップされた同一エンドポイント数
   private static skippedDuplicateEndpoints = 0;
-  
+
   // 非HTML/非対象URLのスキップ数
   private static skippedNonHtmlUrls = 0;
 
@@ -28,7 +28,7 @@ export class CrawlStatistics {
   static countSkippedDuplicateUrl(): void {
     this.skippedDuplicateUrls++;
   }
-  
+
   /**
    * アンカー部分のみ違うURLのスキップをカウント
    */
@@ -69,19 +69,21 @@ export class CrawlStatistics {
    * (スキップされたURL数 / 総URL数) * 100
    */
   private static calculateEfficiencyRate(): number {
-    const totalUrls = this.totalUrlsProcessed + 
-                      this.skippedDuplicateUrls + 
-                      this.skippedAnchorUrls + 
-                      this.skippedDuplicateEndpoints + 
-                      this.skippedNonHtmlUrls;
-    
+    const totalUrls =
+      this.totalUrlsProcessed +
+      this.skippedDuplicateUrls +
+      this.skippedAnchorUrls +
+      this.skippedDuplicateEndpoints +
+      this.skippedNonHtmlUrls;
+
     if (totalUrls === 0) return 0;
-    
-    const skippedUrls = this.skippedDuplicateUrls + 
-                         this.skippedAnchorUrls + 
-                         this.skippedDuplicateEndpoints + 
-                         this.skippedNonHtmlUrls;
-    
+
+    const skippedUrls =
+      this.skippedDuplicateUrls +
+      this.skippedAnchorUrls +
+      this.skippedDuplicateEndpoints +
+      this.skippedNonHtmlUrls;
+
     return (skippedUrls / totalUrls) * 100;
   }
 

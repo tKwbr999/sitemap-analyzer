@@ -4,7 +4,12 @@ import { WebsiteCrawler } from './src/crawler/crawler';
 import { defaultConfig } from './src/config/default-config';
 import { basicConfig, blogConfig, ecommerceConfig, spaConfig } from './src/config/config-examples';
 import { CrawlConfig } from './src/types';
-import { basicConfig as customBasicConfig, ecommerceConfig as customEcommerceConfig, blogConfig as customBlogConfig, spaConfig as customSpaConfig } from './config';
+import {
+  basicConfig as customBasicConfig,
+  ecommerceConfig as customEcommerceConfig,
+  blogConfig as customBlogConfig,
+  spaConfig as customSpaConfig,
+} from './config';
 
 // コマンドライン引数を解析するヘルパー関数
 const parseCommandLineArgs = (): { configType: string; baseUrl?: string } => {

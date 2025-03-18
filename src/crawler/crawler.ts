@@ -39,7 +39,7 @@ export class WebsiteCrawler {
 
     this.browserManager = new BrowserManager();
     this.pageProcessor = new PageProcessor(this.browserManager);
-    
+
     // 統計情報をリセット
     CrawlStatistics.reset();
   }
@@ -59,7 +59,7 @@ export class WebsiteCrawler {
     // キューが空になるまで処理
     while (this.pageQueue.length > 0 && processedPages < this.config.maxPages) {
       const { url, depth } = this.pageQueue.shift()!;
-      
+
       // URLを正規化
       const normalizedUrl = UrlEndpointAnalyzer.normalizeUrl(url);
 
@@ -78,8 +78,11 @@ export class WebsiteCrawler {
       if (this.visitedUrls.has(normalizedUrl)) {
         // アンカー部分の違いだけでスキップされる場合は、すでにcountSkippedAnchorUrlが呼ばれている
         // 可能性があるので、そのケースではcountSkippedDuplicateUrlは呼ばない
-        const isAnchorOnlyDifference = UrlEndpointAnalyzer.isAnchorOnlyDifference(url, normalizedUrl);
-        
+        const isAnchorOnlyDifference = UrlEndpointAnalyzer.isAnchorOnlyDifference(
+          url,
+          normalizedUrl
+        );
+
         if (!isAnchorOnlyDifference) {
           console.log(`訪問済みURLのためスキップ: ${normalizedUrl}`);
           CrawlStatistics.countSkippedDuplicateUrl();
@@ -89,17 +92,19 @@ export class WebsiteCrawler {
         }
         continue;
       }
-      
+
       // クロールすべきURLかチェック
       if (!UrlFilter.shouldCrawl(normalizedUrl)) {
         console.log(`非HTMLコンテンツのためスキップ: ${normalizedUrl}`);
         CrawlStatistics.countSkippedNonHtmlUrl();
         continue;
       }
-      
+
       // 同一エンドポイントの訪問済みチェック（AirbnbパターンのURLのみ）
-      if (UrlEndpointAnalyzer.isAirbnbPattern(normalizedUrl) && 
-          UrlEndpointAnalyzer.isVisitedEndpoint(normalizedUrl)) {
+      if (
+        UrlEndpointAnalyzer.isAirbnbPattern(normalizedUrl) &&
+        UrlEndpointAnalyzer.isVisitedEndpoint(normalizedUrl)
+      ) {
         console.log(`同一エンドポイントのため処理をスキップ: ${normalizedUrl}`);
         CrawlStatistics.countSkippedDuplicateEndpoint();
         continue;
@@ -108,15 +113,15 @@ export class WebsiteCrawler {
       console.log(
         `[${processedPages + 1}/${this.config.maxPages}] クロール中: ${normalizedUrl} (深さ: ${depth})`
       );
-      
+
       // URLを訪問済みとしてマーク
       this.visitedUrls.add(normalizedUrl);
-      
+
       // エンドポイントを訪問済みとしてマーク（Airbnbパターンの場合）
       if (UrlEndpointAnalyzer.isAirbnbPattern(normalizedUrl)) {
         UrlEndpointAnalyzer.markEndpointAsVisited(normalizedUrl);
       }
-      
+
       CrawlStatistics.countProcessedUrl();
 
       try {
@@ -138,21 +143,27 @@ export class WebsiteCrawler {
           for (const link of pageInfo.links) {
             // 正規化したURLを使用
             const normalizedLink = UrlEndpointAnalyzer.normalizeUrl(link);
-            
+
             // アンカー部分のみの違いを確認
-            const isAnchorOnlyDifference = UrlEndpointAnalyzer.isAnchorOnlyDifference(link, normalizedLink);
-            
+            const isAnchorOnlyDifference = UrlEndpointAnalyzer.isAnchorOnlyDifference(
+              link,
+              normalizedLink
+            );
+
             // アンカー部分のみの差異がある場合、統計情報を記録
             if (isAnchorOnlyDifference) {
               CrawlStatistics.countSkippedAnchorUrl();
               console.log(`キュー追加でアンカー部分のみ削除: ${link} -> ${normalizedLink}`);
             }
-            
-            if (!this.visitedUrls.has(normalizedLink) && 
-                UrlFilter.shouldCrawl(normalizedLink) && 
-                !(UrlEndpointAnalyzer.isAirbnbPattern(normalizedLink) && 
-                  UrlEndpointAnalyzer.isVisitedEndpoint(normalizedLink))) {
-              
+
+            if (
+              !this.visitedUrls.has(normalizedLink) &&
+              UrlFilter.shouldCrawl(normalizedLink) &&
+              !(
+                UrlEndpointAnalyzer.isAirbnbPattern(normalizedLink) &&
+                UrlEndpointAnalyzer.isVisitedEndpoint(normalizedLink)
+              )
+            ) {
               this.pageQueue.push({ url: normalizedLink, depth: depth + 1 });
             }
           }

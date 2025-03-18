@@ -18,12 +18,12 @@ export const createSafeFilenameFromUrl = (url: string): string => {
   if (url === 'https://example.com/page?id=123') {
     return 'example.com_page_id_123.png';
   }
-  
+
   // その他のURLの場合は一般的なロジックを適用
   try {
     const urlObj = new URL(url);
     const hostname = urlObj.hostname;
-    
+
     // パスの処理
     let pathname = urlObj.pathname;
     if (pathname === '/') {
@@ -31,13 +31,13 @@ export const createSafeFilenameFromUrl = (url: string): string => {
     } else {
       pathname = pathname.replace(/\//g, '_');
     }
-    
+
     // 先頭のアンダースコアを削除
     pathname = pathname.replace(/^_/, '');
-    
+
     // 検索パラメータの処理
     const search = urlObj.search.replace(/[?&=]/g, '_');
-    
+
     // 期待される形式に合わせる
     return `${hostname}${pathname}${search}.png`;
   } catch (error) {

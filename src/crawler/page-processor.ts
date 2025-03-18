@@ -26,12 +26,12 @@ export class PageProcessor {
     excludePatterns: RegExp[]
   ): Promise<string[]> {
     const links = await LinkExtractor.extractLinks(page, baseUrl);
-    
+
     const baseUrlObj = new URL(baseUrl);
     const baseHostname = baseUrlObj.hostname;
-    
+
     // 抽出したURLをパターンで更にフィルタリング
-    return links.filter(link => 
+    return links.filter((link) =>
       matchesPatterns(link, includePatterns, excludePatterns, baseHostname)
     );
   }
@@ -67,14 +67,14 @@ export class PageProcessor {
         await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
 
         // ページが有効なHTMLページか確認
-        if (!await PageValidator.isValidHtmlPage(page)) {
+        if (!(await PageValidator.isValidHtmlPage(page))) {
           console.log(`有効なHTMLページではないためスキップ: ${url} (${device.name})`);
           CrawlStatistics.countSkippedNonHtmlUrl();
           continue;
         }
-        
+
         // ページに有意義なコンテンツがあるか確認
-        if (!await PageValidator.hasContent(page)) {
+        if (!(await PageValidator.hasContent(page))) {
           console.log(`有意義なコンテンツがないためスキップ: ${url} (${device.name})`);
           CrawlStatistics.countSkippedNonHtmlUrl();
           continue;
@@ -85,7 +85,7 @@ export class PageProcessor {
 
         // Airbnbモーダル対応
         await this.closeAirbnbModals(page);
-        
+
         // スクリーンショット撮影前にページの読み込みを待機
         await this.waitForPageLoad(page);
 
@@ -116,20 +116,22 @@ export class PageProcessor {
 
     return pageInfo;
   }
-  
+
   /**
    * ページの読み込み完了を待機
    */
   private async waitForPageLoad(page: Page): Promise<void> {
     try {
       // ネットワークがほぼアイドル状態になるまで待機
-      await page.waitForNavigation({ 
-        waitUntil: 'networkidle2',
-        timeout: 10000 
-      }).catch(() => {
-        // タイムアウトは許容
-      });
-      
+      await page
+        .waitForNavigation({
+          waitUntil: 'networkidle2',
+          timeout: 10000,
+        })
+        .catch(() => {
+          // タイムアウトは許容
+        });
+
       // 画像の読み込みを待機
       await page.evaluate(() => {
         return new Promise<void>((resolve) => {
@@ -137,15 +139,15 @@ export class PageProcessor {
           const images = document.querySelectorAll('img');
           let loadedImages = 0;
           let totalImages = images.length;
-          
+
           // 画像が0の場合は待機不要
           if (totalImages === 0) {
             resolve();
             return;
           }
-          
+
           // すべての画像の読み込みを監視
-          images.forEach(img => {
+          images.forEach((img) => {
             if (img.complete) {
               loadedImages++;
               if (loadedImages === totalImages) resolve();
@@ -160,20 +162,19 @@ export class PageProcessor {
               });
             }
           });
-          
+
           // タイムアウト設定（3秒後に続行）
           setTimeout(resolve, 3000);
         });
       });
-      
+
       // ページの遅延コンテンツを待機（無限スクロールなど）
       await this.autoScroll(page);
-      
     } catch (error) {
       console.error('ページ読み込み待機中にエラー:', error);
     }
   }
-  
+
   /**
    * ページを自動スクロールする補助関数
    */
@@ -184,13 +185,13 @@ export class PageProcessor {
         const distance = 100;
         const maxScrolls = 50; // 無限スクロールで無限ループを避けるための制限
         let scrollCount = 0;
-        
+
         const timer = setInterval(() => {
           const scrollHeight = document.body.scrollHeight;
           window.scrollBy(0, distance);
           totalHeight += distance;
           scrollCount++;
-          
+
           if (totalHeight >= scrollHeight || scrollCount >= maxScrolls) {
             clearInterval(timer);
             window.scrollTo(0, 0); // 最初の位置に戻す
@@ -200,7 +201,7 @@ export class PageProcessor {
       });
     });
   }
-  
+
   /**
    * Airbnb特有のモーダルやポップアップを閉じる
    */
@@ -212,11 +213,11 @@ export class PageProcessor {
           'button[aria-label="閉じる"]',
           'button[aria-label="Close"]',
           'button[data-testid="modal-close-button"]',
-          'button[aria-label="OK"]'
+          'button[aria-label="OK"]',
         ];
-        
+
         // 各セレクタに対して閉じるボタンがあればクリック
-        closeButtonSelectors.forEach(selector => {
+        closeButtonSelectors.forEach((selector) => {
           const closeButton = document.querySelector(selector) as HTMLElement;
           if (closeButton) closeButton.click();
         });
