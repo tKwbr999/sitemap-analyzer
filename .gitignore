@@ -5,3 +5,5 @@ screenshots
 .env**
 !.env.example
 config.ts
+tmp
+output.txt

@@ -88,6 +88,49 @@ const config: CrawlConfig = {
 };
 ```
 
+## プロジェクト構造
+
+```
+/
+├── src/                      # ソースコードディレクトリ
+│   ├── analyzer/             # 分析機能
+│   │   └── sitemap-analyzer.ts
+│   ├── config/               # 設定関連
+│   │   ├── config-examples.ts
+│   │   └── default-config.ts
+│   ├── crawler/              # クローラー機能
+│   │   ├── browser-manager.ts
+│   │   ├── crawler.ts
+│   │   ├── link-extractor.ts
+│   │   ├── page-processor.ts
+│   │   ├── page-validator.ts
+│   │   └── url-filter.ts
+│   ├── entry/                # エントリーポイント
+│   │   ├── analyze.ts
+│   │   └── index.ts
+│   ├── errors/               # エラー処理
+│   ├── types/                # 型定義
+│   │   └── index.ts
+│   ├── utils/                # ユーティリティ
+│   │   ├── crawl-statistics.ts
+│   │   ├── file-utils.ts
+│   │   ├── screenshot-path.ts
+│   │   └── url-endpoint-analyzer.ts
+│   └── __tests__/            # テスト
+│       ├── crawl-statistics.test.ts
+│       ├── screenshot-path.test.ts
+│       ├── url-endpoint-analyzer.test.ts
+│       ├── url-filter.test.ts
+│       ├── url-handling.test.ts
+│       └── utils.test.ts
+├── index.ts                  # メインエントリーポイント
+├── analyze.ts                # 分析エントリーポイント
+├── config.ts                 # ユーザー設定ファイル
+├── package.json              # 依存関係とスクリプト
+├── tsconfig.json             # TypeScript設定
+└── README.md                 # このファイル
+```
+
 ## 出力形式
 
 ### スクリーンショット
@@ -148,6 +191,27 @@ const config: CrawlConfig = {
 - パス分布
 - 深度別ページ数
 - 被リンク数上位のページ
+
+## 開発者向け情報
+
+コードを変更した場合は、以下のコマンドを実行してください：
+
+```bash
+# コードの整形
+npm run fmt
+
+# リントチェック
+npm run lint
+
+# コンパイルチェック
+npm run compile-check
+
+# テスト実行
+npm run test
+
+# 上記をすべて実行
+npm run check-all
+```
 
 ## ライセンス
 

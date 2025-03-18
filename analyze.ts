@@ -1,8 +1,11 @@
 // analyze.ts
-// このファイルはアナライザのエントリポイントです
-// src/analyze.ts を呼び出すだけの薄いラッパーです
+// 分析用のルートエントリーポイント
+// このファイルはsrc/entry/analyze.tsへの橋渡しをします
 
-import './src/analyze';
+export * from './src/entry/analyze';
 
-// すべてのエクスポートを再エクスポート
-export * from './src/analyze';
+// メインプログラムの実行
+if (require.main === module) {
+  // src/entry/analyze.tsのmain関数を直接呼び出す
+  require('./src/entry/analyze');
+}

@@ -1,8 +1,5 @@
-// src/config/config-examples.ts
-import { CrawlConfig } from '../types';
-
 // 基本設定例
-export const basicConfig: CrawlConfig = {
+const basicConfig: CrawlConfig = {
   baseUrl: 'https://example.com',
   outputDir: './screenshots',
   maxDepth: 2,
@@ -27,7 +24,7 @@ export const basicConfig: CrawlConfig = {
 };
 
 // Eコマースサイト向け設定例
-export const ecommerceConfig: CrawlConfig = {
+const ecommerceConfig: CrawlConfig = {
   baseUrl: 'https://example-shop.com',
   outputDir: './screenshots',
   maxDepth: 3,
@@ -58,7 +55,7 @@ export const ecommerceConfig: CrawlConfig = {
 };
 
 // ブログサイト向け設定例
-export const blogConfig: CrawlConfig = {
+const blogConfig: CrawlConfig = {
   baseUrl: 'https://example-blog.com',
   outputDir: './screenshots',
   maxDepth: 2,
@@ -82,27 +79,49 @@ export const blogConfig: CrawlConfig = {
   excludePatterns: [/\/author\//i, /\/tag\//i, /\/page\/[2-9]/i, /\?comment=/i],
 };
 
-// SPAサイト向け設定例
-export const spaConfig: CrawlConfig = {
-  baseUrl: 'https://example-spa.com',
-  outputDir: './screenshots',
-  maxDepth: 2,
-  maxPages: 30,
-  delay: 5000, // SPAの場合は長めの遅延が必要
-  devices: [
-    {
-      name: 'desktop',
-      width: 1920,
-      height: 1080,
-      isMobile: false,
-    },
-    {
-      name: 'smartphone',
-      width: 375,
-      height: 812,
-      isMobile: true,
-    },
-  ],
-  includePatterns: [/^https?:\/\/example-spa\.com\//i],
-  excludePatterns: [/\/login/i, /\/profile/i],
-};
+// 使用例
+/*async function runCrawlers() {
+  // 基本設定での実行
+  console.log('基本設定でのクロール開始');
+  const basicCrawler = new WebsiteCrawler(basicConfig);
+  await basicCrawler.crawl();
+
+  // Eコマース設定での実行
+  console.log('Eコマース設定でのクロール開始');
+  const ecommerceCrawler = new WebsiteCrawler(ecommerceConfig);
+  await ecommerceCrawler.crawl();
+
+  // ブログ設定での実行
+  console.log('ブログ設定でのクロール開始');
+  const blogCrawler = new WebsiteCrawler(blogConfig);
+  await blogCrawler.crawl();
+}
+*/
+
+// CLI引数でどの設定を使うか選択
+async function main() {
+  const args = process.argv.slice(2);
+  const configType = args[0] || 'basic';
+
+  switch (configType) {
+    case 'basic':
+      const basicCrawler = new WebsiteCrawler(basicConfig);
+      await basicCrawler.crawl();
+      break;
+    case 'ecommerce':
+      const ecommerceCrawler = new WebsiteCrawler(ecommerceConfig);
+      await ecommerceCrawler.crawl();
+      break;
+    case 'blog':
+      const blogCrawler = new WebsiteCrawler(blogConfig);
+      await blogCrawler.crawl();
+      break;
+    default:
+      console.error('不明な設定タイプです。basic, ecommerce, blog のいずれかを指定してください。');
+      process.exit(1);
+  }
+}
+
+if (require.main === module) {
+  main().catch(console.error);
+}

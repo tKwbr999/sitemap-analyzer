@@ -1,39 +1,54 @@
-// src/index.ts
-import { WebsiteCrawler } from './crawler/crawler';
+// src/entry/index.ts
+// プロジェクトのメインエントリーポイント
+import { WebsiteCrawler } from '../crawler/crawler';
 import {
   basicConfig,
   blogConfig,
   ecommerceConfig,
   spaConfig,
   defaultConfig,
-} from './config/config';
-import { CrawlConfig } from './types';
+} from '../config/config';
+import { CrawlConfig } from '../types';
+import {
+  basicConfig as customBasicConfig,
+  ecommerceConfig as customEcommerceConfig,
+  blogConfig as customBlogConfig,
+  spaConfig as customSpaConfig,
+} from '../config/config';
 
-// コマンドライン引数を解析するヘルパー関数
+/**
+ * コマンドライン引数を解析するヘルパー関数
+ */
 const parseCommandLineArgs = (): { configType: string; baseUrl?: string } => {
+  // process.argv[0]はnodeのパス、process.argv[1]は実行ファイルのパスなので、slice(2)で実際の引数を取得
   const args = process.argv.slice(2);
+  // configType: 設定の種類 (basic, ecommerce, blog, spa, default)
   const configType = args[0] || 'default';
+  // baseUrl: クロール対象のベースURL（オプション）
   const baseUrl = args[1];
 
   return { configType, baseUrl };
 };
 
-// 指定された設定タイプに基づいて設定を取得するヘルパー関数
+/**
+ * 指定された設定タイプに基づいて設定を取得するヘルパー関数
+ */
 const getConfig = (configType: string, baseUrl?: string): CrawlConfig => {
   let config: CrawlConfig;
 
   switch (configType) {
     case 'basic':
-      config = { ...basicConfig };
+      // カスタム設定があれば優先的に使用
+      config = { ...customBasicConfig };
       break;
     case 'ecommerce':
-      config = { ...ecommerceConfig };
+      config = { ...customEcommerceConfig };
       break;
     case 'blog':
-      config = { ...blogConfig };
+      config = { ...customBlogConfig };
       break;
     case 'spa':
-      config = { ...spaConfig };
+      config = { ...customSpaConfig };
       break;
     case 'default':
     default:
@@ -49,7 +64,9 @@ const getConfig = (configType: string, baseUrl?: string): CrawlConfig => {
   return config;
 };
 
-// メイン関数
+/**
+ * メイン関数
+ */
 async function main() {
   try {
     const { configType, baseUrl } = parseCommandLineArgs();
@@ -68,11 +85,12 @@ async function main() {
   }
 }
 
-// スクリプトが直接実行された場合のみメイン関数を実行
+// エントリーポイント
 if (require.main === module) {
   main().catch(console.error);
 }
 
-export { WebsiteCrawler } from './crawler/crawler';
-export { SitemapAnalyzer } from './analyzer/sitemap-analyzer';
-export * from './types';
+// エクスポート
+export { WebsiteCrawler } from '../crawler/crawler';
+export { SitemapAnalyzer } from '../analyzer/sitemap-analyzer';
+export * from '../types';

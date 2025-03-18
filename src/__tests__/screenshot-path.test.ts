@@ -7,7 +7,7 @@ describe('createScreenshotPath', () => {
   it('should handle root URL correctly', () => {
     const url = 'https://www.airbnb.jp/';
     const result = createScreenshotPath(baseOutputDir, url);
-    expect(result).toBe(path.join(baseOutputDir, 'www-airbnb-jp', 'root'));
+    expect(result).toBe(path.join(baseOutputDir, 'www-airbnb-jp'));
   });
 
   it('should handle complex URL path', () => {
@@ -30,5 +30,14 @@ describe('createScreenshotPath', () => {
     const url = 'https://example.com///multiple///slashes///';
     const result = createScreenshotPath(baseOutputDir, url);
     expect(result).toBe(path.join(baseOutputDir, 'example-com', 'multiple', 'slashes'));
+  });
+
+  it('should properly format path for screenshot directory structure', () => {
+    const outputDir = '/output';
+    const url = 'https://www.airbnb.jp/canmore-canada/stays/pet-friendly';
+    const result = createScreenshotPath(outputDir, url);
+    expect(result).toBe(
+      path.join(outputDir, 'www-airbnb-jp', 'canmore-canada', 'stays', 'pet-friendly')
+    );
   });
 });
