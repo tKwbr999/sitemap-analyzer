@@ -3,6 +3,24 @@ import { URL } from 'url';
 import crypto from 'crypto';
 
 export class UrlEndpointAnalyzer {
+  /**
+   * URLのアンカー部分のみが違うか確認する
+   * @param originalUrl 元のURL
+   * @param normalizedUrl アンカー削除後のURL
+   */
+  static isAnchorOnlyDifference(originalUrl: string, normalizedUrl: string): boolean {
+    try {
+      const urlObj = new URL(originalUrl);
+      const normalizedUrlObj = new URL(normalizedUrl);
+      
+      return urlObj.hash !== '' && normalizedUrlObj.hash === '' &&
+             urlObj.origin === normalizedUrlObj.origin &&
+             urlObj.pathname === normalizedUrlObj.pathname &&
+             urlObj.search === normalizedUrlObj.search;
+    } catch (error) {
+      return false;
+    }
+  }
   // 訪問済みエンドポイントを記録するセット
   private static visitedEndpoints = new Set<string>();
 
@@ -92,11 +110,14 @@ export class UrlEndpointAnalyzer {
   }
 
   /**
-   * URLを正規化して重要でないパラメータを削除
+   * URLを正規化して重要でないパラメータとアンカーを削除
    */
   static normalizeUrl(url: string): string {
     try {
       const parsedUrl = new URL(url);
+      
+      // アンカー（#以降）を削除
+      parsedUrl.hash = '';
       
       // パスに '/rooms/' が含まれるか確認
       if (parsedUrl.pathname.includes('/rooms/')) {

@@ -63,10 +63,30 @@ export class WebsiteCrawler {
       // URLを正規化
       const normalizedUrl = UrlEndpointAnalyzer.normalizeUrl(url);
 
+      // 元のURLとの違いをログに出力（デバッグ用）
+      if (url !== normalizedUrl) {
+        // アンカー部分のみが違うかチェック
+        if (UrlEndpointAnalyzer.isAnchorOnlyDifference(url, normalizedUrl)) {
+          console.log(`アンカー部分のみ削除: ${url} -> ${normalizedUrl}`);
+          CrawlStatistics.countSkippedAnchorUrl();
+        } else {
+          console.log(`URL正規化: ${url} -> ${normalizedUrl}`);
+        }
+      }
+
       // 既に訪問済みのURLはスキップ
       if (this.visitedUrls.has(normalizedUrl)) {
-        console.log(`訪問済みURLのためスキップ: ${normalizedUrl}`);
-        CrawlStatistics.countSkippedDuplicateUrl();
+        // アンカー部分の違いだけでスキップされる場合は、すでにcountSkippedAnchorUrlが呼ばれている
+        // 可能性があるので、そのケースではcountSkippedDuplicateUrlは呼ばない
+        const isAnchorOnlyDifference = UrlEndpointAnalyzer.isAnchorOnlyDifference(url, normalizedUrl);
+        
+        if (!isAnchorOnlyDifference) {
+          console.log(`訪問済みURLのためスキップ: ${normalizedUrl}`);
+          CrawlStatistics.countSkippedDuplicateUrl();
+        } else {
+          console.log(`アンカー違いのみの訪問済みURLをスキップ: ${url} -> ${normalizedUrl}`);
+          // countSkippedAnchorUrlはすでに呼ばれている可能性があるため、重複カウントしない
+        }
         continue;
       }
       
@@ -118,6 +138,15 @@ export class WebsiteCrawler {
           for (const link of pageInfo.links) {
             // 正規化したURLを使用
             const normalizedLink = UrlEndpointAnalyzer.normalizeUrl(link);
+            
+            // アンカー部分のみの違いを確認
+            const isAnchorOnlyDifference = UrlEndpointAnalyzer.isAnchorOnlyDifference(link, normalizedLink);
+            
+            // アンカー部分のみの差異がある場合、統計情報を記録
+            if (isAnchorOnlyDifference) {
+              CrawlStatistics.countSkippedAnchorUrl();
+              console.log(`キュー追加でアンカー部分のみ削除: ${link} -> ${normalizedLink}`);
+            }
             
             if (!this.visitedUrls.has(normalizedLink) && 
                 UrlFilter.shouldCrawl(normalizedLink) && 

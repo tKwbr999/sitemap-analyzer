@@ -6,6 +6,9 @@ export class CrawlStatistics {
   // スキップされたURL数
   private static skippedDuplicateUrls = 0;
   
+  // アンカー部分のみ違うURLのスキップ数
+  private static skippedAnchorUrls = 0;
+  
   // スキップされた同一エンドポイント数
   private static skippedDuplicateEndpoints = 0;
   
@@ -24,6 +27,13 @@ export class CrawlStatistics {
    */
   static countSkippedDuplicateUrl(): void {
     this.skippedDuplicateUrls++;
+  }
+  
+  /**
+   * アンカー部分のみ違うURLのスキップをカウント
+   */
+  static countSkippedAnchorUrl(): void {
+    this.skippedAnchorUrls++;
   }
 
   /**
@@ -47,6 +57,7 @@ export class CrawlStatistics {
     console.log('\n--- クロール統計 ---');
     console.log(`処理URL数: ${this.totalUrlsProcessed}`);
     console.log(`重複URLスキップ数: ${this.skippedDuplicateUrls}`);
+    console.log(`アンカー部分のみ違うURLスキップ数: ${this.skippedAnchorUrls}`);
     console.log(`同一エンドポイントスキップ数: ${this.skippedDuplicateEndpoints}`);
     console.log(`非HTMLコンテンツスキップ数: ${this.skippedNonHtmlUrls}`);
     console.log(`効率化率: ${this.calculateEfficiencyRate().toFixed(2)}%`);
@@ -60,12 +71,14 @@ export class CrawlStatistics {
   private static calculateEfficiencyRate(): number {
     const totalUrls = this.totalUrlsProcessed + 
                       this.skippedDuplicateUrls + 
+                      this.skippedAnchorUrls + 
                       this.skippedDuplicateEndpoints + 
                       this.skippedNonHtmlUrls;
     
     if (totalUrls === 0) return 0;
     
     const skippedUrls = this.skippedDuplicateUrls + 
+                         this.skippedAnchorUrls + 
                          this.skippedDuplicateEndpoints + 
                          this.skippedNonHtmlUrls;
     
@@ -78,6 +91,7 @@ export class CrawlStatistics {
   static reset(): void {
     this.totalUrlsProcessed = 0;
     this.skippedDuplicateUrls = 0;
+    this.skippedAnchorUrls = 0;
     this.skippedDuplicateEndpoints = 0;
     this.skippedNonHtmlUrls = 0;
   }

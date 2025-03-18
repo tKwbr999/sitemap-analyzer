@@ -68,6 +68,49 @@ describe('UrlEndpointAnalyzer', () => {
     expect(normalizedUrl).toContain('adults=2');
   });
   
+  test('URLの正規化がアンカー部分を削除する', () => {
+    const url = 'https://www.airbnb.jp/rooms/12345?adults=2#photos';
+    const normalizedUrl = UrlEndpointAnalyzer.normalizeUrl(url);
+    
+    expect(normalizedUrl).not.toContain('#photos');
+    expect(normalizedUrl).toEqual('https://www.airbnb.jp/rooms/12345?adults=2');
+  });
+  
+  test('アンカー付きの検索ページURLの正規化', () => {
+    const url = 'https://www.airbnb.jp/s/Tokyo?adults=2&check_in=2025-04-01#map';
+    const normalizedUrl = UrlEndpointAnalyzer.normalizeUrl(url);
+    
+    expect(normalizedUrl).not.toContain('#map');
+    expect(normalizedUrl).toEqual('https://www.airbnb.jp/s/Tokyo?adults=2&check_in=2025-04-01');
+  });
+  
+  test('isAnchorOnlyDifferenceメソッドがアンカー部分のみの違いを検出する', () => {
+    // アンカー部分のみが異なる場合
+    const url1 = 'https://www.airbnb.jp/rooms/12345?adults=2#photos';
+    const normalizedUrl1 = 'https://www.airbnb.jp/rooms/12345?adults=2';
+    expect(UrlEndpointAnalyzer.isAnchorOnlyDifference(url1, normalizedUrl1)).toBeTruthy();
+    
+    // アンカー以外の部分も異なる場合
+    const url2 = 'https://www.airbnb.jp/rooms/12345?adults=2#photos';
+    const normalizedUrl2 = 'https://www.airbnb.jp/rooms/12345?adults=3';
+    expect(UrlEndpointAnalyzer.isAnchorOnlyDifference(url2, normalizedUrl2)).toBeFalsy();
+    
+    // アンカーがない場合
+    const url3 = 'https://www.airbnb.jp/rooms/12345?adults=2';
+    const normalizedUrl3 = 'https://www.airbnb.jp/rooms/12345?adults=2';
+    expect(UrlEndpointAnalyzer.isAnchorOnlyDifference(url3, normalizedUrl3)).toBeFalsy();
+    
+    // アンカーが両方にある場合
+    const url4 = 'https://www.airbnb.jp/rooms/12345?adults=2#photos';
+    const normalizedUrl4 = 'https://www.airbnb.jp/rooms/12345?adults=2#reviews';
+    expect(UrlEndpointAnalyzer.isAnchorOnlyDifference(url4, normalizedUrl4)).toBeFalsy();
+    
+    // 正規化後にURLが異なる場合
+    const url5 = 'https://www.airbnb.jp/rooms/12345?source_impression_id=123#photos';
+    const normalizedUrl5 = 'https://www.airbnb.jp/rooms/12345';
+    expect(UrlEndpointAnalyzer.isAnchorOnlyDifference(url5, normalizedUrl5)).toBeFalsy();
+  });
+  
   test('ハッシュベースのファイル名生成', () => {
     const url = 'https://www.airbnb.jp/rooms/12345?adults=2&check_in=2025-04-01';
     const filename = UrlEndpointAnalyzer.generateFileNameFromUrl(url);
