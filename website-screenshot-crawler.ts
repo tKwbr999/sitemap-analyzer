@@ -2,6 +2,7 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
+import { createScreenshotPath } from './src/utils/screenshot-path';
 import { URL } from 'url';
 
 // デバイス設定
@@ -50,8 +51,8 @@ class WebsiteCrawler {
     // ベースURLからドメイン名を抽出
     const domainName = new URL(config.baseUrl).hostname.replace(/\./g, '-');
 
-    // 出力ディレクトリパスを更新
-    this.config.outputDir = path.join(config.outputDir, domainName);
+    // 出力ディレクトリパスを更新（screenshots ディレクトリを削除）
+    this.config.outputDir = config.outputDir;
 
     // 出力ディレクトリの作成
     if (!fs.existsSync(this.config.outputDir)) {
@@ -164,8 +165,11 @@ class WebsiteCrawler {
         const urlObj = new URL(url);
         const hostname = urlObj.hostname;
         const pathname = urlObj.pathname.replace(/\//g, '_') || 'index';
-        const filename = `${hostname}${pathname}${urlObj.search.replace(/[?&=]/g, '_')}.png`;
-        const screenshotPath = path.join(this.config.outputDir, device.name, filename);
+        const screenshotDir = createScreenshotPath(this.config.outputDir, url);
+        fs.mkdirSync(screenshotDir, { recursive: true });
+        const deviceShortName = device.name === 'desktop' ? 'pc' : 'sp';
+        const screenshotPath = path.join(screenshotDir, `${deviceShortName}.png`);
+        // 既に変更済み
 
         await page.screenshot({ path: screenshotPath, fullPage: true });
 
