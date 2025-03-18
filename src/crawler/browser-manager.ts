@@ -31,19 +31,10 @@ export class BrowserManager {
   }
 
   /**
-   * 新しいページインスタンスを作成します
+   * リソースリクエストのインターセプションを設定します
+   * @param page 設定対象のページ
    */
-  async createPage(): Promise<Page> {
-    if (!this.browser) {
-      await this.initialize();
-    }
-
-    if (!this.browser) {
-      throw new Error('ブラウザの初期化に失敗しました');
-    }
-
-    const page = await this.browser.newPage();
-    
+  private async setupRequestInterception(page: Page): Promise<void> {
     // リソースの最適化
     await page.setRequestInterception(true);
     page.on('request', request => {
@@ -68,6 +59,24 @@ export class BrowserManager {
         request.continue();
       }
     });
+  }
+
+  /**
+   * 新しいページインスタンスを作成します
+   */
+  async createPage(): Promise<Page> {
+    if (!this.browser) {
+      await this.initialize();
+    }
+
+    if (!this.browser) {
+      throw new Error('ブラウザの初期化に失敗しました');
+    }
+
+    const page = await this.browser.newPage();
+    
+    // リクエストインターセプションの設定
+    await this.setupRequestInterception(page);
     
     return page;
   }

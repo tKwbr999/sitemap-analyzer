@@ -101,6 +101,8 @@ export class PageProcessor {
         });
 
         // 同じドメインのリンクを収集
+        // 最初の深さ（ホームページ）またはリンクがまだ収集されていない場合にのみリンクを抽出
+        // これにより、各ページで重複したリンク抽出を防ぎつつ、初期ページでのリンク収集を確実に行います
         if (depth === 0 || pageInfo.links.length === 0) {
           const links = await this.extractLinks(page, url, includePatterns, excludePatterns);
           pageInfo.links = links;

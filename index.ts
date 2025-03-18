@@ -8,8 +8,11 @@ import { basicConfig as customBasicConfig, ecommerceConfig as customEcommerceCon
 
 // コマンドライン引数を解析するヘルパー関数
 const parseCommandLineArgs = (): { configType: string; baseUrl?: string } => {
+  // process.argv[0]はnodeのパス、process.argv[1]は実行ファイルのパスなので、slice(2)で実際の引数を取得
   const args = process.argv.slice(2);
+  // configType: 設定の種類 (basic, ecommerce, blog, spa, default)
   const configType = args[0] || 'default';
+  // baseUrl: クロール対象のベースURL（オプション）
   const baseUrl = args[1];
 
   return { configType, baseUrl };
