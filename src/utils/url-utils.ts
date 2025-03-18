@@ -9,14 +9,14 @@ export const createSafeFilenameFromUrl = (url: string): string => {
   const hostname = urlObj.hostname;
   let pathname = urlObj.pathname;
   if (pathname === '/') {
-    pathname = 'index';
+    pathname = '_index';
   } else {
     pathname = pathname.replace(/\//g, '_');
   }
   pathname = pathname.replace(/^_/, ''); // Remove leading underscore
   const search = urlObj.search.replace(/[?&=]/g, '_');
 
-  return `${hostname}${pathname}${search}.png`;
+  return `${hostname}_${pathname}${search}.png`;
 };
 
 /**
