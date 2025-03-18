@@ -15,11 +15,50 @@ export class BrowserManager {
 
     const options = {
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      args: [
+        '--no-sandbox', 
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--disable-gpu',
+        '--window-size=1280,800'
+      ],
+      ignoreHTTPSErrors: true,
     };
 
     this.browser = await puppeteer.launch(options);
     console.log('ブラウザを起動しました');
+  }
+
+  /**
+   * リソースリクエストのインターセプションを設定します
+   * @param page 設定対象のページ
+   */
+  private async setupRequestInterception(page: Page): Promise<void> {
+    // リソースの最適化
+    await page.setRequestInterception(true);
+    page.on('request', request => {
+      // 不要なリソースをブロック
+      const blockedResourceTypes = [
+        'font', 'texttrack', 'object', 'beacon', 'csp_report', 'imageset'
+      ];
+      
+      // ブロックするドメイン
+      const blockedDomains = [
+        'analytics', 'googletagmanager', 'facebook', 'twitter', 'doubleclick', 'adservice'
+      ];
+      
+      const requestUrl = request.url().toLowerCase();
+      const resourceType = request.resourceType();
+      
+      // リソースタイプまたはURLに基づいてブロック
+      if (blockedResourceTypes.includes(resourceType) || 
+          blockedDomains.some(domain => requestUrl.includes(domain))) {
+        request.abort();
+      } else {
+        request.continue();
+      }
+    });
   }
 
   /**
@@ -34,7 +73,12 @@ export class BrowserManager {
       throw new Error('ブラウザの初期化に失敗しました');
     }
 
-    return await this.browser.newPage();
+    const page = await this.browser.newPage();
+    
+    // リクエストインターセプションの設定
+    await this.setupRequestInterception(page);
+    
+    return page;
   }
 
   /**
@@ -50,6 +94,9 @@ export class BrowserManager {
     if (device.userAgent) {
       await page.setUserAgent(device.userAgent);
     }
+    
+    // タイムアウト設定
+    await page.setDefaultNavigationTimeout(30000);
   }
 
   /**

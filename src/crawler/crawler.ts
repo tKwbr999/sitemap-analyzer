@@ -6,6 +6,9 @@ import { PageProcessor } from './page-processor';
 import { sleep } from '../utils/common';
 import { createDirectory } from '../utils/file-utils';
 import { getDomainDirFromUrl, writeJsonToFile } from '../utils/file-utils';
+import { UrlEndpointAnalyzer } from '../utils/url-endpoint-analyzer';
+import { UrlFilter } from './url-filter';
+import { CrawlStatistics } from '../utils/crawl-statistics';
 
 export class WebsiteCrawler {
   private browserManager: BrowserManager;
@@ -36,6 +39,9 @@ export class WebsiteCrawler {
 
     this.browserManager = new BrowserManager();
     this.pageProcessor = new PageProcessor(this.browserManager);
+    
+    // 統計情報をリセット
+    CrawlStatistics.reset();
   }
 
   /**
@@ -53,20 +59,50 @@ export class WebsiteCrawler {
     // キューが空になるまで処理
     while (this.pageQueue.length > 0 && processedPages < this.config.maxPages) {
       const { url, depth } = this.pageQueue.shift()!;
+      
+      // URLを正規化
+      const normalizedUrl = UrlEndpointAnalyzer.normalizeUrl(url);
 
       // 既に訪問済みのURLはスキップ
-      if (this.visitedUrls.has(url)) {
+      if (this.visitedUrls.has(normalizedUrl)) {
+        console.log(`訪問済みURLのためスキップ: ${normalizedUrl}`);
+        CrawlStatistics.countSkippedDuplicateUrl();
+        continue;
+      }
+      
+      // クロールすべきURLかチェック
+      if (!UrlFilter.shouldCrawl(normalizedUrl)) {
+        console.log(`非HTMLコンテンツのためスキップ: ${normalizedUrl}`);
+        CrawlStatistics.countSkippedNonHtmlUrl();
+        continue;
+      }
+      
+      // 同一エンドポイントの訪問済みチェック（AirbnbパターンのURLのみ）
+      if (UrlEndpointAnalyzer.isAirbnbPattern(normalizedUrl) && 
+          UrlEndpointAnalyzer.isVisitedEndpoint(normalizedUrl)) {
+        console.log(`同一エンドポイントのため処理をスキップ: ${normalizedUrl}`);
+        CrawlStatistics.countSkippedDuplicateEndpoint();
         continue;
       }
 
       console.log(
-        `[${processedPages + 1}/${this.config.maxPages}] クロール中: ${url} (深さ: ${depth})`
+        `[${processedPages + 1}/${this.config.maxPages}] クロール中: ${normalizedUrl} (深さ: ${depth})`
       );
+      
+      // URLを訪問済みとしてマーク
+      this.visitedUrls.add(normalizedUrl);
+      
+      // エンドポイントを訪問済みとしてマーク（Airbnbパターンの場合）
+      if (UrlEndpointAnalyzer.isAirbnbPattern(normalizedUrl)) {
+        UrlEndpointAnalyzer.markEndpointAsVisited(normalizedUrl);
+      }
+      
+      CrawlStatistics.countProcessedUrl();
 
       try {
         // ページを処理
         const pageInfo = await this.pageProcessor.processUrl(
-          url,
+          normalizedUrl,
           depth,
           this.config.outputDir,
           this.config.devices,
@@ -75,14 +111,20 @@ export class WebsiteCrawler {
         );
 
         this.pageInfos.push(pageInfo);
-        this.visitedUrls.add(url);
         processedPages++;
 
         // 次の深さの処理が必要な場合、リンクをキューに追加
         if (depth < this.config.maxDepth) {
           for (const link of pageInfo.links) {
-            if (!this.visitedUrls.has(link)) {
-              this.pageQueue.push({ url: link, depth: depth + 1 });
+            // 正規化したURLを使用
+            const normalizedLink = UrlEndpointAnalyzer.normalizeUrl(link);
+            
+            if (!this.visitedUrls.has(normalizedLink) && 
+                UrlFilter.shouldCrawl(normalizedLink) && 
+                !(UrlEndpointAnalyzer.isAirbnbPattern(normalizedLink) && 
+                  UrlEndpointAnalyzer.isVisitedEndpoint(normalizedLink))) {
+              
+              this.pageQueue.push({ url: normalizedLink, depth: depth + 1 });
             }
           }
         }
@@ -90,12 +132,15 @@ export class WebsiteCrawler {
         // 次の深さの処理のため、遅延を入れる
         await sleep(this.config.delay);
       } catch (error) {
-        console.error(`エラー (${url}):`, error);
+        console.error(`エラー (${normalizedUrl}):`, error);
       }
     }
 
     // サイトマップJSONの生成
     this.generateSitemap();
+
+    // 統計情報を表示
+    CrawlStatistics.printStatistics();
 
     await this.browserManager.close();
     console.log('クロール完了');

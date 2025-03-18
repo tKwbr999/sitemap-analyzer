@@ -4,3 +4,4 @@ screenshots
 *.log
 .env**
 !.env.example
+config.ts
