@@ -1,0 +1,6 @@
+node_modules
+coverage
+screenshots
+*.log
+.env**
+!.env.example

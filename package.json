@@ -1,0 +1,44 @@
+{
+  "name": "sitemap-analyzer",
+  "version": "1.0.0",
+  "description": "ウェブサイトのスクリーンショット収集と構造分析ツール",
+  "main": "index.ts",
+  "scripts": {
+    "crawl": "ts-node index.ts",
+    "analyze": "ts-node analyze.ts",
+    "crawl:basic": "ts-node index.ts basic",
+    "crawl:ecommerce": "ts-node index.ts ecommerce",
+    "crawl:blog": "ts-node index.ts blog",
+    "crawl:spa": "ts-node index.ts spa",
+    "build": "tsc",
+    "fmt": "prettier --write \"src/**/*.ts\" \"*.ts\"",
+    "lint": "eslint --ext .ts src/ *.ts",
+    "compile-check": "tsc --noEmit",
+    "test": "jest",
+    "check-all": "npm run fmt && npm run lint && npm run compile-check && npm run test"
+  },
+  "keywords": [
+    "website",
+    "screenshot",
+    "crawler",
+    "sitemap",
+    "analyzer"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@types/node": "^20.17.24",
+    "puppeteer": "^24.4.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@typescript-eslint/eslint-plugin": "^8.26.1",
+    "@typescript-eslint/parser": "^8.26.1",
+    "eslint": "^9.22.0",
+    "eslint-plugin-prettier": "^5.2.3",
+    "prettier": "^3.5.3",
+    "ts-jest": "^29.2.6"
+  }
+}
