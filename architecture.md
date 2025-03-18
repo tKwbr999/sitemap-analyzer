@@ -19,6 +19,7 @@ sitemap-analyzer/
 │   ├── utils/               # ユーティリティ関数
 │   │   ├── common.ts
 │   │   ├── file-utils.ts
+│   │   ├── screenshot-path.ts  # スクリーンショットパス生成
 │   │   └── url-utils.ts
 │   ├── analyze.ts           # 分析エントリポイント
 │   └── index.ts             # メインエントリポイント
@@ -119,6 +120,10 @@ SitemapAnalyzer (`src/analyzer/sitemap-analyzer.ts`)
   - URLからファイル名の生成
   - ドメイン名の抽出
   - URLのフィルタリング
+- **screenshot-path.ts**: スクリーンショットパス生成
+  - URLをもとにスクリーンショット保存パスを生成
+  - ドメイン名をディレクトリ構造に変換
+  - URLパスをディレクトリ階層に変換
 
 ### 6. エントリポイント
 
@@ -149,11 +154,14 @@ SitemapAnalyzer (`src/analyzer/sitemap-analyzer.ts`)
 
 ## 自動ディレクトリ構成
 
-- 出力先は `outputDir/ドメイン名/` の形式で自動生成
-  - 例：baseUrl が `https://example.com` の場合、`./screenshots/example-com/`
-- デバイスごとのサブディレクトリを自動作成
-  - 例：`./screenshots/example-com/desktop/`
-  - 例：`./screenshots/example-com/smartphone/`
+- 出力先は以下の形式で自動生成されます
+  - `outputDir/ドメイン名/パス/階層`
+- 例えば以下のようなパス構造となります
+  - `outputDir/www-airbnb-jp/canmore-canada/stays/pet-friendly/pc.png`
+  - `outputDir/www-airbnb-jp/canmore-canada/stays/pet-friendly/sp.png`
+- デバイスごとのスクリーンショットは各パスディレクトリに格納
+  - PCのスクリーンショット: `pc.png`
+  - スマートフォンのスクリーンショット: `sp.png`
 
 ## 実行例
 

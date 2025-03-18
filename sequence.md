@@ -10,6 +10,7 @@ sequenceDiagram
     participant Crawler as WebsiteCrawler
     participant BrowserMgr as BrowserManager
     participant PageProc as PageProcessor
+    participant PathUtils as ScreenshotPathUtils
     participant Utils as UrlUtils/FileUtils
     participant Browser as Puppeteer
 
@@ -27,7 +28,7 @@ sequenceDiagram
     Utils-->>Crawler: domainName
     deactivate Utils
     
-    Crawler->>Utils: createDirectory(outputDir/domainName)
+    Crawler->>Utils: createDirectory(outputDir)
     activate Utils
     Utils-->>Crawler: directories created
     deactivate Utils
@@ -86,17 +87,23 @@ sequenceDiagram
                 Browser-->>PageProc: page title
                 deactivate Browser
                 
-                PageProc->>Utils: createSafeFilenameFromUrl(url)
+                PageProc->>PathUtils: createScreenshotPath(outputDir, url)
+                activate PathUtils
+                PathUtils->>PathUtils: パスをディレクトリ構造に変換
+                PathUtils-->>PageProc: screenshotDir
+                deactivate PathUtils
+                
+                PageProc->>Utils: fs.mkdirSync(screenshotDir, {recursive: true})
                 activate Utils
-                Utils-->>PageProc: filename
+                Utils-->>PageProc: directory created
                 deactivate Utils
                 
-                PageProc->>Browser: page.screenshot({path: outputDir/device/filename, fullPage: true})
+                PageProc->>Browser: page.screenshot({path: screenshotDir/deviceName.png, fullPage: true})
                 activate Browser
                 Browser-->>PageProc: screenshot saved
                 deactivate Browser
                 
-                alt depth is 0
+                alt depth < maxDepth
                     PageProc->>PageProc: extractLinks(page, url, includePatterns, excludePatterns)
                     PageProc->>Browser: page.evaluate(extractAnchors)
                     activate Browser
@@ -153,6 +160,42 @@ sequenceDiagram
     deactivate Main
 ```
 
+## スクリーンショットパス生成フロー
+
+```mermaid
+sequenceDiagram
+    participant PageProc as PageProcessor
+    participant PathUtils as ScreenshotPathUtils
+    participant Utils as FileUtils
+    participant Browser as Puppeteer
+
+    PageProc->>PathUtils: createScreenshotPath(outputDir, url)
+    activate PathUtils
+    PathUtils->>PathUtils: URLをパース
+    PathUtils->>PathUtils: ホスト名を抽出して変換 (. -> -)
+    PathUtils->>PathUtils: パスを正規化してセグメントに分割
+    PathUtils->>PathUtils: セグメントを安全な文字列に変換
+    
+    alt パスがない場合
+        PathUtils-->>PageProc: outputDir/hostname
+    else パスがある場合
+        PathUtils-->>PageProc: outputDir/hostname/segment1/segment2/...
+    end
+    deactivate PathUtils
+    
+    PageProc->>Utils: fs.mkdirSync(screenshotDir, {recursive: true})
+    activate Utils
+    Utils-->>PageProc: ディレクトリ作成完了
+    deactivate Utils
+    
+    PageProc->>Browser: デバイスに応じた名前を生成 (desktop -> pc, smartphone -> sp)
+    
+    PageProc->>Browser: page.screenshot({path: `${screenshotDir}/${deviceName}.png`, fullPage: true})
+    activate Browser
+    Browser-->>PageProc: スクリーンショット保存完了
+    deactivate Browser
+```
+
 ## 分析プロセスのシーケンス図
 
 ```mermaid
@@ -197,6 +240,28 @@ sequenceDiagram
     deactivate Main
 ```
 
+## スクリーンショット保存ディレクトリ構造
+
+### 更新後のディレクトリ構造
+
+```
+[outputDir]/
+├── www-airbnb-jp/
+│   ├── pc.png      # トップページのdesktopスクリーンショット
+│   ├── sp.png      # トップページのsmartphoneスクリーンショット
+│   ├── canmore-canada/
+│   │   └── stays/
+│   │       └── pet-friendly/
+│   │           ├── pc.png  # desktopスクリーンショット
+│   │           └── sp.png  # smartphoneスクリーンショット
+│   └── benalmadena-spain/
+│       └── stays/
+│           └── houses/
+│               ├── pc.png  # desktopスクリーンショット
+│               └── sp.png  # smartphoneスクリーンショット
+└── sitemap.json  # クロール結果のサイトマップ
+```
+
 ## 全体的なワークフローの概要
 
 1. **クロールプロセス**:
@@ -204,7 +269,7 @@ sequenceDiagram
    - 設定を読み込み
    - WebsiteCrawlerがインスタンス化され、クロール開始
    - ブラウザが初期化され、各ページにアクセス
-   - 各デバイスごとにスクリーンショットを撮影
+   - 各デバイスごとにURLパスに基づいたディレクトリ構造でスクリーンショットを撮影
    - リンクを抽出し、次のクロール対象をキューに追加
    - すべてのページを処理後、サイトマップJSONを生成
    - ブラウザを閉じて完了
