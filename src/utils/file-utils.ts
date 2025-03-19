@@ -44,6 +44,20 @@ export const getDomainDirFromUrl = (url: string): string => {
     return urlObj.hostname.replace(/\./g, '-');
   } catch (error) {
     console.error(`無効なURL: ${url}`, error);
+
+    // URLのパースに失敗した場合でも、文字列からドメイン名を推測する
+    const urlWithoutProtocol = url.replace(/^(https?:\/\/)/, '');
+    const possibleDomain = urlWithoutProtocol.split('/')[0];
+
+    if (possibleDomain && possibleDomain.includes('.')) {
+      // ドットを含む場合はドメイン名の可能性が高い
+      return possibleDomain.replace(/\./g, '-');
+    } else if (possibleDomain) {
+      // ドメイン名っぽい部分があればそれを使用
+      return possibleDomain;
+    }
+
+    // どうしても特定できない場合のみunknown-domainを使用
     return 'unknown-domain';
   }
 };
