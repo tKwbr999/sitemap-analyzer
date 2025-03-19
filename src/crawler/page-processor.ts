@@ -56,6 +56,44 @@ export class PageProcessor {
       screenshots: [],
     };
 
+    // 最初のデバイスでページの基本情報を取得
+    const initialPage = await this.browserManager.createPage();
+    try {
+      await this.browserManager.configurePageForDevice(initialPage, devices[0]);
+      await initialPage.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+
+      // ページが有効なHTMLページか確認
+      if (!(await PageValidator.isValidHtmlPage(initialPage))) {
+        console.log(`有効なHTMLページではないためスキップ: ${url}`);
+        CrawlStatistics.countSkippedNonHtmlUrl();
+        return pageInfo;
+      }
+
+      // ページに有意義なコンテンツがあるか確認
+      if (!(await PageValidator.hasContent(initialPage))) {
+        console.log(`有意義なコンテンツがないためスキップ: ${url}`);
+        CrawlStatistics.countSkippedNonHtmlUrl();
+        return pageInfo;
+      }
+
+      // タイトル取得
+      pageInfo.title = await initialPage.title();
+
+      // Airbnbモーダル対応
+      await this.closeAirbnbModals(initialPage);
+
+      // ページの読み込みを待機
+      await this.waitForPageLoad(initialPage);
+
+      // リンクを抽出（デバイスに依存しない処理なので1回だけ実行）
+      const links = await this.extractLinks(initialPage, url, includePatterns, excludePatterns);
+      pageInfo.links = links;
+    } catch (error) {
+      console.error(`ページ初期処理エラー (${url}):`, error);
+    } finally {
+      await initialPage.close();
+    }
+
     // 各デバイスでスクリーンショットを撮影
     for (const device of devices) {
       const page = await this.browserManager.createPage();
@@ -66,23 +104,6 @@ export class PageProcessor {
 
         // ページ読み込み
         await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-
-        // ページが有効なHTMLページか確認
-        if (!(await PageValidator.isValidHtmlPage(page))) {
-          console.log(`有効なHTMLページではないためスキップ: ${url} (${device.name})`);
-          CrawlStatistics.countSkippedNonHtmlUrl();
-          continue;
-        }
-
-        // ページに有意義なコンテンツがあるか確認
-        if (!(await PageValidator.hasContent(page))) {
-          console.log(`有意義なコンテンツがないためスキップ: ${url} (${device.name})`);
-          CrawlStatistics.countSkippedNonHtmlUrl();
-          continue;
-        }
-
-        // タイトル取得
-        pageInfo.title = await page.title();
 
         // Airbnbモーダル対応
         await this.closeAirbnbModals(page);
@@ -112,14 +133,6 @@ export class PageProcessor {
           deviceName: device.name,
           path: screenshotPath,
         });
-
-        // 同じドメインのリンクを収集
-        // 最初の深さ（ホームページ）またはリンクがまだ収集されていない場合にのみリンクを抽出
-        // これにより、各ページで重複したリンク抽出を防ぎつつ、初期ページでのリンク収集を確実に行います
-        if (depth === 0 || pageInfo.links.length === 0) {
-          const links = await this.extractLinks(page, url, includePatterns, excludePatterns);
-          pageInfo.links = links;
-        }
       } catch (error) {
         console.error(`ページ処理エラー (${url}, ${device.name}):`, error);
       } finally {

@@ -133,7 +133,7 @@ export class WebsiteCrawler {
         processedPages++;
 
         // 次の深さの処理が必要な場合、リンクをキューに追加
-        if (depth < this.config.maxDepth) {
+        if (depth <= this.config.maxDepth - 1) {
           for (const link of pageInfo.links) {
             // 正規化したURLを使用
             const normalizedLink = UrlEndpointAnalyzer.normalizeUrl(link);
@@ -150,16 +150,32 @@ export class WebsiteCrawler {
               console.log(`キュー追加でアンカー部分のみ削除: ${link} -> ${normalizedLink}`);
             }
 
-            if (
-              !this.visitedUrls.has(normalizedLink) &&
-              UrlFilter.shouldCrawl(normalizedLink) &&
-              !(
-                UrlEndpointAnalyzer.isAirbnbPattern(normalizedLink) &&
-                UrlEndpointAnalyzer.isVisitedEndpoint(normalizedLink)
-              )
-            ) {
-              this.pageQueue.push({ url: normalizedLink, depth: depth + 1 });
+            // 訪問済みURLのチェック
+            if (this.visitedUrls.has(normalizedLink)) {
+              continue;
             }
+
+            // クロール可否チェック
+            if (!UrlFilter.shouldCrawl(normalizedLink)) {
+              continue;
+            }
+
+            // Airbnbパターンの同一エンドポイントチェック
+            if (
+              UrlEndpointAnalyzer.isAirbnbPattern(normalizedLink) &&
+              UrlEndpointAnalyzer.isVisitedEndpoint(normalizedLink)
+            ) {
+              continue;
+            }
+
+            // URLパターンが処理済みかチェック
+            if (UrlFilter.isProcessedUrlPattern(normalizedLink)) {
+              console.log(`類似URLパターンが既に処理済みのためスキップ: ${normalizedLink}`);
+              continue;
+            }
+
+            // 条件を満たした場合、キューに追加
+            this.pageQueue.push({ url: normalizedLink, depth: depth + 1 });
           }
         }
 

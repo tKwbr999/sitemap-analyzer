@@ -1,5 +1,6 @@
 import path from 'path';
 import { URL } from 'url';
+import { isLikelyId, ID_REPLACEMENT } from './path-segment-analyzer';
 
 /**
  * URLからスクリーンショットパスを生成する関数
@@ -23,17 +24,21 @@ export const createScreenshotPath = (baseOutputDir: string, urlString: string): 
   // 安全に変換されたパスセグメント
   const safePathSegments = pathSegments
     .filter(Boolean) // 空のセグメントを除外
-    .map(
-      (segment) =>
-        segment
-          .replace(/[^a-zA-Z0-9_\-\s]/g, '_') // 安全でない文字を_に置換
-          .replace(/\s+/g, '_') // スペースを_に置換
-    );
+    .map((segment) => {
+      // IDと判断されるセグメントは一般化する
+      if (isLikelyId(segment)) {
+        return ID_REPLACEMENT;
+      }
+
+      return segment
+        .replace(/[^a-zA-Z0-9_\-\s]/g, '_') // 安全でない文字を_に置換
+        .replace(/\s+/g, '_'); // スペースを_に置換
+    });
 
   // baseOutputDirにすでにホスト名が含まれているかチェック
   const basePathSegments = baseOutputDir.split(path.sep);
   const lastBaseSegment = basePathSegments[basePathSegments.length - 1];
-  
+
   // baseOutputDirの最後のセグメントがホスト名と一致する場合、ホスト名の重複を避ける
   if (lastBaseSegment === safeHostname) {
     // パスがない場合の処理（ルートページの場合）
@@ -42,11 +47,11 @@ export const createScreenshotPath = (baseOutputDir: string, urlString: string): 
     }
     return path.join(baseOutputDir, ...safePathSegments);
   }
-  
+
   // 通常のケース - ホスト名も含めたパスを作成
   if (safePathSegments.length === 0) {
     return path.join(baseOutputDir, safeHostname);
   }
-  
+
   return path.join(baseOutputDir, safeHostname, ...safePathSegments);
-}
+};
