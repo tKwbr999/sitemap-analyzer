@@ -89,10 +89,10 @@ export class PageProcessor {
 
         // スクリーンショット撮影前にページの読み込みを待機
         await this.waitForPageLoad(page);
-        
+
         // スクリーンショット撮影 - 仕様に合わせたパス生成
         const screenshotDir = createScreenshotPath(outputDir, url);
-        
+
         // デバイスタイプに応じたファイル名の設定
         let filename;
         if (device.name.toLowerCase().includes('desktop')) {
@@ -100,14 +100,14 @@ export class PageProcessor {
         } else {
           filename = 'sp.png';
         }
-        
+
         // ディレクトリがなければ作成
         const { promises: fs } = require('fs');
         await fs.mkdir(screenshotDir, { recursive: true });
-        
+
         const screenshotPath = path.join(screenshotDir, filename);
         await page.screenshot({ path: screenshotPath, fullPage: true });
-        
+
         pageInfo.screenshots.push({
           deviceName: device.name,
           path: screenshotPath,

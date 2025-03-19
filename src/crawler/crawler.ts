@@ -31,12 +31,6 @@ export class WebsiteCrawler {
     // 出力ディレクトリの作成
     createDirectory(this.config.outputDir);
 
-    // デバイスごとのディレクトリを作成
-    for (const device of config.devices) {
-      const deviceDir = path.join(this.config.outputDir, device.name);
-      createDirectory(deviceDir);
-    }
-
     this.browserManager = new BrowserManager();
     this.pageProcessor = new PageProcessor(this.browserManager);
 
