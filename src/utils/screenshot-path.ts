@@ -10,8 +10,8 @@ export const createScreenshotPath = (baseOutputDir: string, urlString: string): 
   // URLをパース
   const url = new URL(urlString);
 
-  // ホスト名（ドメイン）を置換（ハイフンを使用）
-  const hostname = url.hostname.replace(/\./g, '-');
+  // ホスト名を安全な形式に変換
+  const safeHostname = url.hostname.replace(/\./g, '-');
 
   // パスをディレクトリ構造に変換するため、パス部分を分解
   const pathSegments = decodeURIComponent(url.pathname)
@@ -30,10 +30,23 @@ export const createScreenshotPath = (baseOutputDir: string, urlString: string): 
           .replace(/\s+/g, '_') // スペースを_に置換
     );
 
-  // パスがない場合の処理
-  if (safePathSegments.length === 0) {
-    return path.join(baseOutputDir, hostname);
+  // baseOutputDirにすでにホスト名が含まれているかチェック
+  const basePathSegments = baseOutputDir.split(path.sep);
+  const lastBaseSegment = basePathSegments[basePathSegments.length - 1];
+  
+  // baseOutputDirの最後のセグメントがホスト名と一致する場合、ホスト名の重複を避ける
+  if (lastBaseSegment === safeHostname) {
+    // パスがない場合の処理（ルートページの場合）
+    if (safePathSegments.length === 0) {
+      return baseOutputDir;
+    }
+    return path.join(baseOutputDir, ...safePathSegments);
   }
-
-  return path.join(baseOutputDir, hostname, ...safePathSegments);
-};
+  
+  // 通常のケース - ホスト名も含めたパスを作成
+  if (safePathSegments.length === 0) {
+    return path.join(baseOutputDir, safeHostname);
+  }
+  
+  return path.join(baseOutputDir, safeHostname, ...safePathSegments);
+}
