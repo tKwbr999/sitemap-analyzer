@@ -4,10 +4,11 @@ import path from 'path';
 import { URL } from 'url';
 import { DeviceConfig, PageInfo } from '../types';
 import { BrowserManager } from './browser-manager';
-import { resolveUrl, matchesPatterns, generateHashedFilenameFromUrl } from '../utils/url-utils';
+import { resolveUrl, matchesPatterns } from '../utils/url-utils';
 import { PageValidator } from './page-validator';
 import { LinkExtractor } from './link-extractor';
 import { CrawlStatistics } from '../utils/crawl-statistics';
+import { createScreenshotPath } from '../utils/screenshot-path';
 
 export class PageProcessor {
   private browserManager: BrowserManager;
@@ -88,13 +89,25 @@ export class PageProcessor {
 
         // スクリーンショット撮影前にページの読み込みを待機
         await this.waitForPageLoad(page);
-
-        // スクリーンショット撮影 - 更新した関数を使用
-        const filename = generateHashedFilenameFromUrl(url);
-        const screenshotPath = path.join(outputDir, device.name, filename);
-
+        
+        // スクリーンショット撮影 - 仕様に合わせたパス生成
+        const screenshotDir = createScreenshotPath(outputDir, url);
+        
+        // デバイスタイプに応じたファイル名の設定
+        let filename;
+        if (device.name.toLowerCase().includes('desktop')) {
+          filename = 'pc.png';
+        } else {
+          filename = 'sp.png';
+        }
+        
+        // ディレクトリがなければ作成
+        const { promises: fs } = require('fs');
+        await fs.mkdir(screenshotDir, { recursive: true });
+        
+        const screenshotPath = path.join(screenshotDir, filename);
         await page.screenshot({ path: screenshotPath, fullPage: true });
-
+        
         pageInfo.screenshots.push({
           deviceName: device.name,
           path: screenshotPath,
